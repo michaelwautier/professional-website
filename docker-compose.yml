@@ -1,0 +1,15 @@
+# Alternative à un Postgres local : `docker compose up -d`
+# puis DATABASE_URL=postgres://postgres:postgres@localhost:5432/professional_website
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: professional_website
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+
+volumes:
+  pgdata:

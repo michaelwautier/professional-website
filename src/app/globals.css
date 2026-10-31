@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/* Portfolio et application */
+@theme {
+  --color-paper: #f6f5f1;
+  --color-ink: #0d0e12;
+  --color-ink-soft: #33363f;
+  --color-muted: #686d7a;
+  --color-line: #e2e0d9;
+  --color-accent: #2f47ff;
+  --color-accent-soft: #e9ecff;
+  --color-success: #15803d;
+  --color-danger: #b91c1c;
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-instrument);
+
+  /* Sites clients : valeurs fournies par themeVars() sur la racine du site */
+  --color-site-brand: var(--site-brand);
+  --color-site-brand-ink: var(--site-brand-ink);
+  --color-site-bg: var(--site-bg);
+  --color-site-surface: var(--site-surface);
+  --color-site-text: var(--site-text);
+  --color-site-muted: var(--site-muted);
+  --color-site-border: var(--site-border);
+  --radius-site: var(--site-radius);
+  --font-site-heading: var(--site-font-heading);
+  --font-site-body: var(--site-font-body);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: white;
+}
+
+.site-heading {
+  font-family: var(--site-font-heading);
+  font-weight: var(--site-heading-weight);
+  letter-spacing: var(--site-heading-tracking);
+  text-wrap: balance;
+}
+
+.site-root ::selection {
+  background: var(--site-brand);
+  color: var(--site-brand-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
