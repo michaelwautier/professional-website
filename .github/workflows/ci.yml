@@ -1,0 +1,83 @@
+name: CI
+
+# No path filters on purpose: these jobs are required status checks on main,
+# and a required check that never runs would block the pull request forever.
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+# The jobs only check out the code and run checks: a read-only token is enough.
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Check types
+        run: npx next typegen && npm run typecheck
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: professional_website
+        ports:
+          - 5432:5432
+        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/professional_website
+      NEXT_PUBLIC_ROOT_DOMAIN: localhost:3100
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Applies every migration on an empty database: catches a broken or missing migration.
+      - name: Run database migrations
+        run: npm run db:migrate
+
+      # A schema change without its migration would generate a new file here.
+      - name: Check every schema change has a migration
+        run: |
+          npx drizzle-kit generate --name ci-check
+          test -z "$(git status --porcelain drizzle)" || (echo "::error::Run npm run db:generate and commit the migration" && exit 1)
+
+      - name: Seed demo sites
+        run: npm run db:seed
+
+      - name: Build
+        run: npm run build

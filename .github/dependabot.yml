@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    # Packages that peer-depend on each other must move in the same PR,
+    # otherwise each single bump fails `npm ci`.
+    groups:
+      next:
+        patterns: [ "next", "eslint-config-next", "react", "react-dom", "@types/react", "@types/react-dom" ]
+      drizzle:
+        patterns: [ "drizzle-orm", "drizzle-kit" ]
+      tailwind:
+        patterns: [ "tailwindcss", "@tailwindcss/*" ]
+    ignore:
+      # postgres 4 is a fresh major release: wait until drizzle-orm officially supports it.
+      - dependency-name: postgres
+        versions: [ ">= 4" ]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: [ "*" ]

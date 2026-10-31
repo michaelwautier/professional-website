@@ -12,26 +12,115 @@ Un seul projet Next.js qui sert deux choses sur le même nom de domaine :
 
 Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind CSS 4 · PostgreSQL + Drizzle ORM · Stripe · Resend
 
-## Démarrage en local
+## Faire tourner le projet en local
 
-Prérequis : Node 20+, PostgreSQL (Homebrew, ou `docker compose up -d`).
+Aucun service externe n'est nécessaire : sans clés Resend, Stripe ou Vercel, chaque fonctionnalité a un mode local.
+
+### Prérequis
+
+- **Node.js 20.9 ou plus récent**, avec npm
+- **PostgreSQL**, au choix :
+  - Homebrew : `brew install postgresql@18 && brew services start postgresql@18`
+  - Docker : le fichier `docker-compose.yml` fourni suffit
+
+### 1. Installer
 
 ```bash
-cp .env.example .env.local   # puis ajuster DATABASE_URL si besoin
-createdb professional_website
+git clone git@github.com:michaelwautier/professional-website.git
+cd professional-website
 npm install
+cp .env.example .env.local
+```
+
+Pour démarrer, seules deux variables de `.env.local` comptent :
+
+| Variable | Valeur locale | Rôle |
+| --- | --- | --- |
+| `NEXT_PUBLIC_ROOT_DOMAIN` | `localhost:3100` | Domaine racine. Les sites clients sont servis sur `<slug>.localhost:3100`. |
+| `DATABASE_URL` | `postgres://localhost:5432/professional_website` | Connexion Postgres (voir l'étape 2 pour Docker). |
+| `OWNER_EMAIL` | ton adresse | Facultative : propriétaire des sites de démo, reçoit les prospects et accède à `/espace/admin`. |
+
+Les autres variables (Resend, Stripe, Vercel) peuvent rester vides.
+
+### 2. Créer la base de données
+
+Avec Postgres installé via Homebrew :
+
+```bash
+createdb professional_website
+```
+
+Ou avec Docker, en remplaçant d'abord dans `.env.local` :
+`DATABASE_URL=postgres://postgres:postgres@localhost:5432/professional_website`
+
+```bash
+docker compose up -d
+```
+
+Puis, dans les deux cas, créer les tables et les trois sites de démonstration :
+
+```bash
 npm run db:migrate
-npm run db:seed              # 3 sites de démonstration, rattachés à OWNER_EMAIL
+npm run db:seed
+```
+
+### 3. Lancer
+
+```bash
 npm run dev
 ```
 
-- Portfolio : http://localhost:3100
-- Sites de démo : http://demo-artisan.localhost:3100, http://demo-coiffure.localhost:3100, http://demo-restaurant.localhost:3100
-- Espace client : http://localhost:3100/espace
+| Adresse | Contenu |
+| --- | --- |
+| http://localhost:3100 | Portfolio |
+| http://localhost:3100/creer | Création d'un site (Éclore) |
+| http://localhost:3100/espace | Espace client |
+| http://demo-artisan.localhost:3100 | Site de démo vitrine |
+| http://demo-coiffure.localhost:3100 | Site de démo prise de rendez-vous |
+| http://demo-restaurant.localhost:3100 | Site de démo restaurant |
 
-Les navigateurs résolvent `*.localhost` tout seuls, aucune configuration DNS n'est nécessaire. Sans clé Resend, les
-e-mails (liens de connexion, notifications) s'affichent dans la console, et la page de connexion affiche directement
-le lien. Sans Stripe, la page « Domaine » propose un bouton « Simuler le paiement (dev) ».
+Chrome, Firefox et Edge résolvent `*.localhost` tout seuls. Si ton navigateur ne le fait pas, ajoute une ligne par
+site dans `/etc/hosts`, par exemple `127.0.0.1 demo-artisan.localhost`.
+
+### Tester les parcours sans services externes
+
+- **Créer un site** : passe par `/creer`. Le site est en ligne dès la dernière étape, sur `<slug>.localhost:3100`.
+- **Se connecter** : sur `/connexion`, le lien magique s'affiche directement sur la page et dans la console du
+  serveur. Tous les e-mails (bienvenue, nouvelles demandes, prospects) y sont aussi imprimés.
+- **Accéder à l'administration** : connecte-toi avec `OWNER_EMAIL`, puis ouvre `/espace/admin`.
+- **Formule Pro et domaine perso** : dans l'onglet « Domaine » d'un site, le bouton « Simuler le paiement (dev) »
+  active la formule Pro, et la vérification DNS passe automatiquement en local. Pour voir le site servi par son
+  domaine : `curl -H "Host: mon-domaine.fr" http://localhost:3100`.
+
+### Scripts utiles
+
+| Commande | Rôle |
+| --- | --- |
+| `npm run dev` | Serveur de développement sur le port 3100 |
+| `npm run build` puis `npm start` | Build et serveur de production |
+| `npm run lint` / `npm run typecheck` | ESLint et vérification TypeScript (comme en CI) |
+| `npm run db:generate` | Génère une migration après une modification de `src/db/schema.ts` |
+| `npm run db:migrate` | Applique les migrations |
+| `npm run db:seed` | (Re)crée les sites de démonstration |
+| `npm run db:studio` | Explore la base dans le navigateur (Drizzle Studio) |
+
+### Dépannage
+
+- **Port 3100 déjà utilisé** : change le port dans le script `dev` de `package.json` **et** dans
+  `NEXT_PUBLIC_ROOT_DOMAIN`.
+- **`docker compose up` échoue sur le port 5432** : un Postgres local tourne déjà. Utilise-le, ou arrête-le avec
+  `brew services stop postgresql@18`.
+- **Repartir d'une base vide** :
+
+  ```bash
+  dropdb professional_website && createdb professional_website && npm run db:migrate && npm run db:seed
+  ```
+
+## Contribuer
+
+`main` est protégée : on passe toujours par une branche (`feat/…`, `fix/…`, `docs/…`) et une pull request fusionnée
+en squash, après le passage de la CI (lint, types, migrations, build). Le titre de la PR devient le message du commit
+sur `main` : il doit suivre les Conventional Commits (`feat: …`, `fix: …`).
 
 ## Comment ça marche
 
